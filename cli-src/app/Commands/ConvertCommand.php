@@ -21,14 +21,14 @@ class ConvertCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'convert {source : the input path of the image} { output : the output path of the image } { max-width } { max-height } { quality }';
+    protected $signature = 'convert {source : the input path of the image} { output : the output path of the image } { max-width } { max-height } { quality } { --json-output : Output as json-encoded-string}';
 
     /**
      * The description of the command.
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = 'Convert a single or a directory of Images';
 
     /**
      * Execute the console command.
@@ -42,10 +42,9 @@ class ConvertCommand extends Command
         $quality = $this->argument('quality');
         $maxWidth = $this->argument('max-width');
         $maxHeight = $this->argument('max-height');
-
+        $json = $this->option('json-output');
 
         if (is_dir($source)) {
-            $this->info('Directory Mode');
             $files = scandir($source);
 
             $successCounter = 0;
@@ -57,7 +56,7 @@ class ConvertCommand extends Command
                 $fileInfo = pathinfo($file);
                 $fileExtension = $fileInfo['extension'];
                 if (! in_array($fileExtension, $this->SUPPORTED_FORMATS)) {
-                    $this->warn($file . ': Skipped file because File Extension ' . $fileExtension . ' is not supported.');
+                    if (!$json) $this->warn($file . ': Skipped file because File Extension ' . $fileExtension . ' is not supported.');
                     $skippedCounter++;
                     continue;
                 }
@@ -66,26 +65,49 @@ class ConvertCommand extends Command
                 if ($this->convertToJpeg($inputFile, $outputFile, $quality, $maxWidth, $maxHeight)) {
                     $successCounter++;
                 } else {
-                    $this->error($file . ': Unknown Error while Converting File');
+                    if (! $json) $this->error($file . ': Unknown Error while Converting File');
                     $errorCounter++;
                 }
             }
-            $this->info('Converted Files: ' . $successCounter . ' | Skipped Files: ' . $skippedCounter . ' | Failed Files: ' . $errorCounter);
+            if (! $json) { $this->info('Converted Files: ' . $successCounter . ' | Skipped Files: ' . $skippedCounter . ' | Failed Files: ' . $errorCounter); }
+            else {
+                $this->printJsonOutput($successCounter, $skippedCounter, $errorCounter);
+
+            }
         } else {
-            $this->info('Single File Mode');
             $fileExtension = $this->getFileExtension($source);
 
             if (! in_array($fileExtension, $this->SUPPORTED_FORMATS)) {
-                $this->error($source . ': File Extension ' . $fileExtension .' is not supported.');
+                if (! $json) { $this->error($source . ': File Extension ' . $fileExtension .' is not supported.'); }
+                else {
+                    $this->printJsonOutput(0, 1, 0);
+                }
                 return;
             }
 
             if ($this->convertToJpeg($source, $output, $quality, $maxWidth, $maxHeight)) {
-                $this->info('Successful converted Image');
+                if(! $json) {
+                    $this->info('Successful converted Image');
+                } else {
+                    $this->printJsonOutput(1, 0, 0);
+                }
             } else {
-                $this->error('Could not convert image');
+                if (! $json) {
+                    $this->error('Could not convert image');
+                } else {
+                    $this->printJsonOutput(0, 0, 1);
+                }
             }
         }
+    }
+
+    private function printJsonOutput(int $success, int $skipped, int $error): void {
+        $response = [
+            'converted' => $success,
+            'skipped' => $skipped,
+            'error' => $error
+        ];
+        $this->info(json_encode($response));
     }
 
     /**

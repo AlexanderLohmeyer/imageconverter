@@ -73,4 +73,12 @@
   </div>
 </div>
 
-<button class="btn btn-primary" [disabled]="quality > 100 || quality < 1 || maxHeight < 1 || maxWidth < 1 || !outputPath || !inputPath" type="submit">Convert</button>
+<button class="btn btn-primary" (click)="convert()" [disabled]="quality > 100 || quality < 1 || maxHeight < 1 || maxWidth < 1 || !outputPath || !inputPath" type="submit">Convert</button>
+
+<div *ngIf="success !== 0 || error !== 0 || skipped !== 0" class="alert alert-success mt-3" role="alert">
+  {{ success }} images were successfully converted. {{ skipped }} images were skipped due to wrong format and {{ error }} images could not be converted due to unknown errors.
+</div>
+
+<div *ngIf="errorMsg !== ''" class="alert alert-error mt-3" role="alert">
+  {{ errorMsg }}
+</div>
