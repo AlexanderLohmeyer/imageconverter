@@ -1,0 +1,76 @@
+<div class="form-group">
+  <label for="inputPath">Input Path</label>
+  <input
+    type="text"
+    [ngClass]="{ 'is-invalid': !inputPath }"
+    class="form-control"
+    id="inputPath"
+    [(ngModel)]="inputPath"
+  />
+  <div class="invalid-feedback">Please fill in this field</div>
+</div>
+
+<div class="form-group">
+  <label for="outputPath">Output Path</label>
+  <input
+    type="text"
+    [ngClass]="{ 'is-invalid': !outputPath }"
+    class="form-control"
+    id="outputPath"
+    [(ngModel)]="outputPath"
+  />
+  <div class="invalid-feedback">Please fill in this field</div>
+</div>
+
+<div class="form-group">
+  <label for="maxWidth">Max width</label>
+  <div class="input-group mb-2 mr-sm-2">
+    <div class="input-group-prepend">
+      <div class="input-group-text">px</div>
+    </div>
+    <input
+      type="number"
+      [ngClass]="{ 'is-invalid': maxWidth < 1 }"
+      class="form-control"
+      id="maxWidth"
+      [(ngModel)]="maxWidth"
+    />
+    <div class="invalid-feedback">Please choose only values > 0</div>
+  </div>
+</div>
+
+<div class="form-group">
+  <label for="maxHeight">Max height</label>
+  <div class="input-group mb-2 mr-sm-2">
+    <div class="input-group-prepend">
+      <div class="input-group-text">px</div>
+    </div>
+    <input
+      type="number"
+      [ngClass]="{ 'is-invalid': maxHeight < 1 }"
+      class="form-control"
+      id="maxHeight"
+      [(ngModel)]="maxHeight"
+    />
+    <div class="invalid-feedback">Please choose only values > 0</div>
+  </div>
+</div>
+
+<div class="form-group">
+  <label for="quality">Quality</label>
+  <div class="input-group mb-2 mr-sm-2">
+    <div class="input-group-prepend">
+      <div class="input-group-text">%</div>
+    </div>
+    <input
+      type="number"
+      [ngClass]="{ 'is-invalid': quality > 100 || quality < 1 }"
+      class="form-control"
+      id="quality"
+      [(ngModel)]="quality"
+    />
+    <div class="invalid-feedback">Please choose a value between 1 - 100</div>
+  </div>
+</div>
+
+<button class="btn btn-primary" [disabled]="quality > 100 || quality < 1 || maxHeight < 1 || maxWidth < 1 || !outputPath || !inputPath" type="submit">Convert</button>
