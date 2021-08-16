@@ -40,6 +40,8 @@ class ConvertCommand extends Command
         $source = $this->argument('source');
         $output = $this->argument('output');
         $quality = $this->argument('quality');
+        $maxWidth = $this->argument('max-width');
+        $maxHeight = $this->argument('max-height');
 
 
         if (is_dir($source)) {
@@ -61,7 +63,7 @@ class ConvertCommand extends Command
                 }
                 $inputFile = $source . DIRECTORY_SEPARATOR . $file;
                 $outputFile = $output . DIRECTORY_SEPARATOR . $fileInfo['filename'] . $this->OUTPUT_EXTENSION;
-                if ($this->convertToJpeg($inputFile, $outputFile, $quality)) {
+                if ($this->convertToJpeg($inputFile, $outputFile, $quality, $maxWidth, $maxHeight)) {
                     $successCounter++;
                 } else {
                     $this->error($file . ': Unknown Error while Converting File');
@@ -78,7 +80,7 @@ class ConvertCommand extends Command
                 return;
             }
 
-            if ($this->convertToJpeg($source, $output, $quality)) {
+            if ($this->convertToJpeg($source, $output, $quality, $maxWidth, $maxHeight)) {
                 $this->info('Successful converted Image');
             } else {
                 $this->error('Could not convert image');
@@ -103,7 +105,7 @@ class ConvertCommand extends Command
         return strtolower(end($fileNameArr));
     }
 
-    private function convertToJpeg(string $source, string $output, $quality): ?bool {
+    private function convertToJpeg(string $source, string $output, $quality, int $maxWidth, int $maxHeight): ?bool {
         $fileExtension = $this->getFileExtension($source);
 
         switch ($fileExtension) {
@@ -111,10 +113,17 @@ class ConvertCommand extends Command
                 $image = imagecreatefrompng($source);
                 break;
             case 'gif':
-                $image=imagecreatefromgif($source);
+                $image = imagecreatefromgif($source);
                 break;
             default:
                 return false;
+        }
+
+        $resizedImg = $this->resizeIfNeeded($image, $maxWidth, $maxHeight);
+        if ($resizedImg) {
+            $image = $resizedImg;
+        } else {
+            $this->warn($source . ': Could not Resize this file. Proceed without Resizing.');
         }
 
         try {
@@ -126,5 +135,34 @@ class ConvertCommand extends Command
             return false;
         }
         return true;
+    }
+
+    private function resizeIfNeeded($image, int $maxWidth, int $maxHeight) {
+        $imageWidth = imagesx($image);
+        $imageHeight = imagesy($image);
+        if ($imageWidth > $maxWidth || $imageHeight > $maxHeight) {
+            $aspectRatio = $imageWidth / $imageHeight;
+
+            if ($maxHeight * $aspectRatio > $maxWidth) {
+                $newWidth = $maxWidth;
+                $newHeight = $newWidth / $aspectRatio;
+            } else {
+                $newHeight = $maxHeight;
+                $newWidth = $newHeight * $aspectRatio;
+            }
+
+            try {
+                $newSizedImg = imagecreatetruecolor($newWidth, $newHeight);
+                imagecopyresampled($newSizedImg, $image, 0, 0, 0, 0, $newWidth, $newHeight, $imageWidth, $imageHeight);
+            } catch (\Exception $exception) {
+                return null;
+            }
+
+
+            return $newSizedImg;
+        } else {
+            return $image;
+        }
+
     }
 }
